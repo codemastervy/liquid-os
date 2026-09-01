@@ -58,9 +58,15 @@ Liquid OS is built by a GitHub Actions workflow in this repo (see
 [`.github/workflows/build-iso.yml`](.github/workflows/build-iso.yml)) — no
 local build environment needed on your end.
 
-- **Download a release:** check this repo's
-  [Releases](https://github.com/codemastervy/liquid-os/releases) for a
-  ready-made ISO.
+- **Download the latest release:**
+  [v1.0.0](https://github.com/codemastervy/liquid-os/releases/tag/v1.0.0).
+  The ISO is ~2.4 GB and GitHub caps release assets at 2 GB, so it is
+  published as split parts. Reassemble and verify with:
+
+  ```sh
+  cat Liquid-OS-*.iso.part-* > Liquid-OS.iso
+  sha256sum -c Liquid-OS-*.iso.sha256
+  ```
 - **Build it yourself:** go to **Actions → Build Liquid OS ISO → Run
   workflow**, wait for it to finish (a full desktop build typically takes
   15–30 minutes), then grab the `liquid-os-iso` artifact from that run.
