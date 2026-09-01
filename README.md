@@ -1,129 +1,84 @@
 # Liquid OS
 
-A real, installable respin of **Ubuntu 24.04 LTS (noble)** with a glassmorphism
-"liquid glass" GNOME desktop: translucent windows and panels, real-time
-background blur, a procedurally generated liquid-glass wallpaper, and matching
-Plymouth/GRUB branding — plus the actual Ubuntu installer (`ubiquity`), so you
-can install it to a disk, not just try it live.
-
-Everything is built by **GitHub Actions**. Nothing is installed or compiled on
-anyone's machine to produce it — push to this repo, run the workflow, download
-the ISO.
+Liquid OS is a full desktop Linux distro built on Ubuntu 24.04 LTS, wrapped in
+a glassmorphism "liquid glass" GNOME desktop: translucent windows and panels,
+real-time background blur behind the top bar and overview, and a soft,
+colorful, procedurally generated wallpaper that carries through into the boot
+screen and GRUB menu. It's a real, installable OS — full `ubuntu-desktop`
+plus Ubuntu's actual graphical installer — not a stripped-down demo.
 
 ## Screenshots
 
-The build pipeline boots its own finished ISO inside GitHub Actions (using
-QEMU + KVM on the runner) and auto-captures screenshots, which get committed
-to [`docs/screenshots/`](docs/screenshots) by the workflow itself. They'll
-show up here once the first successful run completes:
-
 <!-- LIQUID_OS_SCREENSHOTS_START -->
-![frame-01.png](docs/screenshots/frame-01.png)
-
-![frame-02.png](docs/screenshots/frame-02.png)
-
-![frame-03.png](docs/screenshots/frame-03.png)
-
-![frame-04.png](docs/screenshots/frame-04.png)
-
-![frame-05.png](docs/screenshots/frame-05.png)
-
-![frame-06.png](docs/screenshots/frame-06.png)
-
-![frame-07.png](docs/screenshots/frame-07.png)
-
-![frame-08.png](docs/screenshots/frame-08.png)
-
-![frame-09.png](docs/screenshots/frame-09.png)
-
-![frame-10.png](docs/screenshots/frame-10.png)
-
-![frame-11.png](docs/screenshots/frame-11.png)
-
-![frame-12.png](docs/screenshots/frame-12.png)
-
-![frame-13.png](docs/screenshots/frame-13.png)
-
-![frame-14.png](docs/screenshots/frame-14.png)
-
-![frame-15.png](docs/screenshots/frame-15.png)
-
-![frame-16.png](docs/screenshots/frame-16.png)
-
-![frame-17.png](docs/screenshots/frame-17.png)
-
-![frame-18.png](docs/screenshots/frame-18.png)
-
-![frame-19.png](docs/screenshots/frame-19.png)
-
-![frame-20.png](docs/screenshots/frame-20.png)
-
+_No screenshots yet — run the workflow (see below) to generate them. (The
+previous set was captured against a build that didn't boot correctly; the
+next successful run will replace this placeholder with real ones.)_
 <!-- LIQUID_OS_SCREENSHOTS_END -->
 
-## Build it
+## The look
 
-1. Go to **Actions → Build Liquid OS ISO → Run workflow** (or push a change
-   under `livebuild-overlay/`, `scripts/`, or the workflow file to `main` —
-   that triggers a build automatically).
-2. The `build` job runs `lb build` to produce the ISO (a full desktop
-   live-build typically takes 45–120 minutes on a hosted runner).
-3. The `screenshot` job then boots that ISO headless in QEMU, waits for it to
-   reach the live desktop, captures frames, and commits the best ones back
-   into `docs/screenshots/` and this README.
-4. Download the ISO from the run's **Artifacts** section
-   (`liquid-os-iso`).
-5. To get a permanent, shareable download instead of a 30-day artifact, push
-   a tag like `v1.0.0` — the workflow also cuts a GitHub Release with the ISO
-   attached.
+Liquid OS starts from stock Ubuntu and reworks the desktop into a frosted,
+translucent look:
+
+- **Yaru-Liquid**, a translucent variant of Ubuntu's own Yaru theme — windows,
+  headerbars, popovers, and buttons get soft rgba backgrounds, rounded
+  corners, and subtle highlight borders instead of flat opaque panels.
+- **Real live blur**, via the [Blur My Shell](https://github.com/aunetx/blur-my-shell)
+  GNOME Shell extension, enabled by default — the top bar, overview, and dash
+  blur whatever's behind them in real time, not just a tinted overlay.
+- **A liquid-glass wallpaper**, painted procedurally (soft blurred color
+  blobs over a deep gradient) rather than a static image, so it's regenerated
+  fresh on every build. The same artwork carries over into the GRUB
+  background and the Plymouth boot splash, so the look is consistent from
+  power-on to desktop.
+
+## What's inside
+
+- Ubuntu 24.04 LTS (noble) as the base — full `ubuntu-desktop`, not a minimal
+  spin, so LibreOffice, Firefox, and the usual GNOME app set are there from
+  first boot.
+- Ubuntu's real installer (`ubiquity`) with an "Install Liquid OS" desktop
+  icon — partitioning, locale, user account, the works. This is a live image
+  you can install to a disk, not just a demo you boot and discard.
+- The Liquid Glass theme, wallpaper, and extension set up as the defaults out
+  of the box — no manual setup after install.
+
+## Get it
+
+Liquid OS is built by a GitHub Actions workflow in this repo (see
+[`.github/workflows/build-iso.yml`](.github/workflows/build-iso.yml)) — no
+local build environment needed on your end.
+
+- **Download a release:** check this repo's
+  [Releases](https://github.com/codemastervy/liquid-os/releases) for a
+  ready-made ISO.
+- **Build it yourself:** go to **Actions → Build Liquid OS ISO → Run
+  workflow**, wait for it to finish (a full desktop build typically takes
+  15–30 minutes), then grab the `liquid-os-iso` artifact from that run.
 
 ## Try it
 
-- **Live session:** boot the ISO as-is (USB stick via `dd`/Balena
-  Etcher/Rufus, or in a VM — UTM, VirtualBox, VMware, or
+- **Live session:** boot the ISO as-is (USB stick via `dd`, Balena Etcher, or
+  Rufus, or in a VM — UTM, VirtualBox, VMware, or
   `qemu-system-x86_64 -m 4096 -cdrom Liquid-OS-*.iso -enable-kvm`, dropping
   `-enable-kvm` off Linux) to try the desktop without touching your disk.
 - **Install it for real:** the live desktop has an "Install Liquid OS" icon
-  that launches `ubiquity`, Ubuntu's normal graphical installer — partitioning,
-  language/locale, user account, the works.
-
-## What "Liquid Glass" actually is
-
-- `livebuild-overlay/hooks/live/0100-liquidos-theme.hook.chroot` clones the
-  stock Yaru GTK theme into `Yaru-Liquid` / `Yaru-Liquid-dark` and layers
-  translucent, rounded-corner CSS onto windows, headerbars, popovers and
-  buttons.
-- `livebuild-overlay/hooks/live/0200-blur-my-shell.hook.chroot` makes sure the
-  [Blur My Shell](https://github.com/aunetx/blur-my-shell) GNOME Shell
-  extension is present and enabled. It isn't packaged in Ubuntu's archive, so
-  the hook clones and installs it straight from source (falling back to an
-  apt install first, in case that ever changes) — this is what gives the
-  top bar, overview, and dash real live background blur, not just a flat
-  translucent color.
-- `scripts/generate-wallpaper.py` procedurally paints a soft, blurred,
-  multi-color-blob wallpaper (the actual "liquid glass" look) — regenerated
-  on every build with Pillow. It's also reused as the GRUB background and
-  swapped into the Plymouth boot theme.
-- `livebuild-overlay/includes.chroot/etc/dconf/db/local.d/00-liquidos` sets
-  the theme, wallpaper, and extension as defaults out of the box.
-- `livebuild-overlay/includes.chroot/etc/os-release` (and `/etc/lsb-release`,
-  `/etc/issue`) rebrand the distro as "Liquid OS" while keeping
-  `ID_LIKE=ubuntu debian`, so apt/PPAs and anything checking `ID_LIKE` keep
-  working normally.
+  that launches `ubiquity`, Ubuntu's normal graphical installer.
 
 ## Repo layout
 
 ```
 .github/workflows/build-iso.yml   CI pipeline:
-                                     build   -> installs live-build, generates
-                                                the wallpaper, merges the
-                                                overlay below into a
-                                                live-build config, runs
-                                                `lb build`.
+                                     build      -> installs live-build,
+                                                   generates the wallpaper,
+                                                   merges the overlay below
+                                                   into a live-build config,
+                                                   runs `lb build`.
                                      screenshot -> boots the resulting ISO in
-                                                QEMU/KVM, captures frames, and
-                                                commits them into
-                                                docs/screenshots/ + this
-                                                README.
+                                                   QEMU/KVM, captures frames,
+                                                   and commits them into
+                                                   docs/screenshots/ + this
+                                                   README.
 scripts/generate-wallpaper.py     Procedural liquid-glass wallpaper generator.
 livebuild-overlay/
   package-lists/                  Packages installed via apt during the
@@ -143,11 +98,10 @@ docs/screenshots/                 Auto-captured desktop screenshots (written
 
 ## Notes / known limitations
 
-- This pipeline was authored without a local Linux/QEMU environment to
-  test-boot against ahead of time (every package name referenced was
-  cross-checked against the Ubuntu 24.04 archive first, but build-time
-  ordering issues can still surface). If a run fails, check the `build-log`
-  artifact from the failed job.
+- The ISO currently boots BIOS/legacy (isolinux) only — no UEFI boot yet.
+  Most VMs (including the QEMU setup above and the screenshot job's own
+  boot-test) and older/legacy-mode hardware are fine; a strict UEFI-only
+  machine won't boot it directly yet.
 - The screenshot job is best-effort: it boots the live session headless and
   takes several timed screenshots. If GNOME hasn't finished loading by the
   last capture, you'll see a boot/login frame instead of the idle desktop —

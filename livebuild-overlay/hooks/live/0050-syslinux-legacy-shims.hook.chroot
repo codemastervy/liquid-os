@@ -1,0 +1,47 @@
+#!/bin/sh
+set -e
+
+# live-build's ubuntu-mode syslinux stage (scripts/build/lb_binary_syslinux)
+# has two hardcoded legacy assumptions that no longer hold on modern Ubuntu:
+#
+# 1. It unconditionally does
+#      tar xfz /usr/share/gfxboot-theme-ubuntu/bootlogo.tar.gz -C <target>
+#    for LB_MODE=ubuntu, regardless of --syslinux-theme. The
+#    gfxboot-theme-ubuntu package itself no longer exists in Ubuntu's
+#    archive at all, so nothing installs that file. Provide an empty (but
+#    valid) tar.gz so the extraction is a harmless no-op instead of a hard
+#    failure.
+#
+# 2. With --syslinux-theme live-build, it renders a splash via
+#      rsvg --format png --height 480 --width 640 splash.svg splash.png
+#    but librsvg2-bin has shipped only `rsvg-convert` (different flag
+#    style: -o/--output instead of a second positional argument) for years.
+#    Provide a small wrapper at /usr/bin/rsvg that translates the old
+#    invocation into the rsvg-convert equivalent.
+
+echo "[liquidos] Installing legacy gfxboot-theme-ubuntu placeholder"
+mkdir -p /usr/share/gfxboot-theme-ubuntu
+tar czf /usr/share/gfxboot-theme-ubuntu/bootlogo.tar.gz --files-from=/dev/null
+
+echo "[liquidos] Installing rsvg -> rsvg-convert compatibility wrapper"
+cat > /usr/bin/rsvg <<'EOF'
+#!/bin/sh
+set -e
+fmt=""
+height=""
+width=""
+files=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --format) fmt="$2"; shift 2 ;;
+    --height) height="$2"; shift 2 ;;
+    --width) width="$2"; shift 2 ;;
+    *) files="$files $1"; shift ;;
+  esac
+done
+set -- $files
+input="$1"
+output="$2"
+exec rsvg-convert ${fmt:+--format "$fmt"} ${height:+--height "$height"} ${width:+--width "$width"} --output "$output" "$input"
+EOF
+chmod +x /usr/bin/rsvg

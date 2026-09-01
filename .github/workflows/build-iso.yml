@@ -51,8 +51,9 @@ jobs:
             --distribution noble \
             --architectures amd64 \
             --archive-areas "main restricted universe multiverse" \
-            --binary-images iso \
-            --bootloader grub2 \
+            --binary-images iso-hybrid \
+            --bootloader syslinux \
+            --syslinux-theme live-build \
             --debian-installer false \
             --iso-application "Liquid OS" \
             --iso-publisher "https://github.com/codemastervy/liquid-os" \
@@ -189,8 +190,8 @@ jobs:
 
       - name: Commit screenshots
         run: |
-          git config user.name "liquid-os-bot"
-          git config user.email "actions@users.noreply.github.com"
+          git config user.name "Isherveer Bhullar"
+          git config user.email "isherveer@gmail.com"
           git add docs/screenshots README.md
           git diff --cached --quiet || git commit -m "Update auto-captured desktop screenshots [skip ci]"
           git push
