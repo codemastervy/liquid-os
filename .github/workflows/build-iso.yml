@@ -176,9 +176,11 @@ jobs:
 
           qemu-system-x86_64 \
             -machine pc,accel=kvm:tcg \
-            -cpu max -smp 2 -m 4096 \
+            -cpu host -smp 2 -m 4096 \
             -cdrom "$iso" -boot d \
             -vga std -display none \
+            -serial file:serial.log \
+            -d guest_errors,unimp -D qemu-debug.log \
             -monitor telnet:127.0.0.1:4444,server,nowait \
             -no-reboot > qemu.log 2>&1 &
           QEMU_PID=$!
@@ -193,7 +195,7 @@ jobs:
           sleep 5
           if ! kill -0 "$QEMU_PID" 2>/dev/null; then
             echo "::error::qemu exited within 5 seconds of starting. Log follows:"
-            cat qemu.log
+            cat qemu.log qemu-debug.log serial.log 2>/dev/null
             exit 1
           fi
 
@@ -204,7 +206,7 @@ jobs:
             sleep 30
             if ! kill -0 "$QEMU_PID" 2>/dev/null; then
               echo "::warning::qemu process died mid-capture (frame $i). Log follows:"
-              cat qemu.log
+              cat qemu.log qemu-debug.log serial.log 2>/dev/null
               break
             fi
             send_monitor "screendump shots/frame-$(printf '%02d' "$i").ppm"
@@ -214,6 +216,10 @@ jobs:
           wait "$QEMU_PID" 2>/dev/null || true
           echo "=== qemu.log ==="
           cat qemu.log || true
+          echo "=== qemu-debug.log ==="
+          cat qemu-debug.log || true
+          echo "=== serial.log ==="
+          cat serial.log || true
 
           for f in shots/*.ppm; do
             if [ -s "$f" ]; then
