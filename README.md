@@ -57,9 +57,9 @@ straight into this section of this file._
   buttons.
 - `livebuild-overlay/hooks/live/0200-blur-my-shell.hook.chroot` makes sure the
   [Blur My Shell](https://github.com/aunetx/blur-my-shell) GNOME Shell
-  extension is present and enabled (it's pulled in directly via apt in
-  `package-lists/desktop.list.chroot`, with a from-source fallback in the
-  hook if the archive package is ever unavailable) — this is what gives the
+  extension is present and enabled. It isn't packaged in Ubuntu's archive, so
+  the hook clones and installs it straight from source (falling back to an
+  apt install first, in case that ever changes) — this is what gives the
   top bar, overview, and dash real live background blur, not just a flat
   translucent color.
 - `scripts/generate-wallpaper.py` procedurally paints a soft, blurred,

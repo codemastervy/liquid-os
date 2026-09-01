@@ -5,7 +5,6 @@ ubiquity-casper
 ubiquity-frontend-gtk
 ubiquity-slideshow-ubuntu
 gnome-shell-extensions
-gnome-shell-extension-blur-my-shell
 gnome-tweaks
 dconf-cli
 network-manager
