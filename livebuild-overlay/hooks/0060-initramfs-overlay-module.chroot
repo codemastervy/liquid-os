@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+# The generated initramfs was shipping zero real kernel module files at
+# all (confirmed by extracting and inspecting it directly) -- overlay.ko
+# specifically was missing, so casper's mountroot() fails at
+#   modprobe -b overlay || panic "'cow format specified as 'overlay' and no support found"
+# which is exactly the "Unable to find a medium" / rescue-shell drop we
+# hit when actually booting the built ISO. Force-including it via
+# /etc/initramfs-tools/modules is the standard, documented way to
+# guarantee a module ends up in the initramfs regardless of hook
+# detection. Must run before any hook calls update-initramfs -u.
+echo "[liquidos] Forcing overlay kernel module into initramfs"
+mkdir -p /etc/initramfs-tools
+echo "overlay" >> /etc/initramfs-tools/modules
