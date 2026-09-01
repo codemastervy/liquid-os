@@ -56,9 +56,7 @@ jobs:
             --iso-application "Liquid OS" \
             --iso-publisher "https://github.com/codemastervy/liquid-os" \
             --iso-volume "LIQUIDOS" \
-            --memtest none \
-            --hostname liquidos \
-            --username liquid
+            --memtest none
 
       - name: Merge Liquid OS overlay into live-build config
         run: |
