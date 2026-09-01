@@ -20,4 +20,6 @@ else
   echo "[liquidos] no default plymouth theme detected, skipping"
 fi
 
-update-initramfs -u || true
+# NOTE: the initramfs rebuild deliberately lives in
+# 0500-rebuild-verify-initramfs.chroot so it happens once, after every
+# other hook has made its changes, and so its result is verified.

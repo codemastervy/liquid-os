@@ -1,0 +1,37 @@
+#!/bin/sh
+set -e
+
+# Rebuild the initramfs LAST (after plymouth branding, dconf, theme and
+# the /etc/initramfs-tools/modules entry added by 0060 are all in place),
+# then hard-verify the result.
+#
+# Why the verification matters: a previous build produced an initramfs
+# containing ZERO kernel module files. casper's mountroot() then panics at
+#   modprobe -b overlay || panic "'cow format specified as 'overlay' and no support found"
+# and the ISO drops to a BusyBox rescue shell instead of booting. That
+# failure was completely silent at build time -- the ISO built "successfully"
+# and only revealed itself when actually booting the image. Failing the
+# build here turns that into a loud, obvious error instead.
+
+KVER="$(basename "$(ls -1 /boot/vmlinuz-* | head -n1)" | sed 's/^vmlinuz-//')"
+echo "[liquidos] Rebuilding initramfs for kernel ${KVER}"
+
+update-initramfs -c -k "${KVER}" || update-initramfs -u -k "${KVER}"
+
+INITRD="/boot/initrd.img-${KVER}"
+if [ ! -f "${INITRD}" ]; then
+    echo "[liquidos] FATAL: ${INITRD} was not produced"
+    exit 1
+fi
+
+KO_COUNT="$(lsinitramfs "${INITRD}" | grep -c '\.ko' || true)"
+echo "[liquidos] initramfs contains ${KO_COUNT} kernel module file(s)"
+
+if lsinitramfs "${INITRD}" | grep -q 'overlayfs/overlay\.ko'; then
+    echo "[liquidos] OK: overlay module present in initramfs"
+else
+    echo "[liquidos] FATAL: overlay.ko is missing from ${INITRD}."
+    echo "[liquidos] casper cannot set up its overlay root without it and the"
+    echo "[liquidos] booted ISO would drop to a BusyBox rescue shell."
+    exit 1
+fi
