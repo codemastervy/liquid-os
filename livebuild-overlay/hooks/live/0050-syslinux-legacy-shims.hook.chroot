@@ -18,6 +18,19 @@ set -e
 #    style: -o/--output instead of a second positional argument) for years.
 #    Provide a small wrapper at /usr/bin/rsvg that translates the old
 #    invocation into the rsvg-convert equivalent.
+#
+# 3. The live-build-bundled isolinux template (share/bootloaders/isolinux/)
+#    contains two symlinks pointing at a pre-reorg syslinux layout:
+#    isolinux.bin -> /usr/lib/syslinux/isolinux.bin (isolinux.bin has since
+#    moved into its own `isolinux` package at /usr/lib/ISOLINUX/isolinux.bin)
+#    and vesamenu.c32 -> /usr/lib/syslinux/vesamenu.c32 (syslinux-common now
+#    nests its modules under modules/bios/). Both are dangling on modern
+#    Ubuntu, so lb_binary_syslinux's `cp -aL` dereferencing copy fails with
+#    "cannot stat". Recreate the old flat paths as compatibility symlinks.
+
+echo "[liquidos] Installing syslinux flat-layout compatibility symlinks"
+ln -sf /usr/lib/ISOLINUX/isolinux.bin /usr/lib/syslinux/isolinux.bin
+ln -sf /usr/lib/syslinux/modules/bios/vesamenu.c32 /usr/lib/syslinux/vesamenu.c32
 
 echo "[liquidos] Installing legacy gfxboot-theme-ubuntu placeholder"
 mkdir -p /usr/share/gfxboot-theme-ubuntu

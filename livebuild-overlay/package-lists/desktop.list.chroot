@@ -13,6 +13,7 @@ plymouth-themes
 os-prober
 discover
 syslinux-utils
+isolinux
 librsvg2-bin
 firefox
 git
