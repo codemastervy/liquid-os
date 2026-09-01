@@ -63,7 +63,7 @@ jobs:
           mkdir -p build/config/package-lists build/config/includes.chroot build/config/hooks/live
           cp -av livebuild-overlay/package-lists/. build/config/package-lists/
           cp -av livebuild-overlay/includes.chroot/. build/config/includes.chroot/
-          cp -av livebuild-overlay/hooks/. build/config/hooks/live/
+          cp -av livebuild-overlay/hooks/live/. build/config/hooks/live/
           chmod +x build/config/hooks/live/*.hook.chroot
 
       - name: Build ISO
