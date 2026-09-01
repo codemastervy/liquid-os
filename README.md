@@ -7,6 +7,23 @@ colorful, procedurally generated wallpaper that carries through into the boot
 screen and GRUB menu. It's a real, installable OS — full `ubuntu-desktop`
 plus Ubuntu's actual graphical installer — not a stripped-down demo.
 
+## Screenshots
+
+Captured from the built ISO actually running in QEMU (framebuffer grabs, so
+this is the real booted system, not mockups):
+
+![Liquid OS desktop](docs/screenshots/desktop.png)
+
+The desktop with the procedurally generated liquid-glass wallpaper.
+
+![Activities overview](docs/screenshots/activities-overview.png)
+
+The GNOME Activities overview.
+
+![Terminal](docs/screenshots/terminal.png)
+
+A terminal window over the wallpaper.
+
 ## The look
 
 Liquid OS starts from stock Ubuntu and reworks the desktop into a frosted,
