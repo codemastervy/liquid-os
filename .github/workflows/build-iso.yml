@@ -144,25 +144,28 @@ jobs:
           limit=$((2 * 1024 * 1024 * 1024))
           sha=$(sha256sum "$iso" | cut -d' ' -f1)
 
+          {
+            echo "Liquid OS - Ubuntu 24.04 LTS with the Liquid Glass GNOME desktop."
+            echo ""
+            echo "Boots to a live GNOME session and can be installed to disk with"
+            echo "the \"Install Liquid OS\" icon (ubiquity)."
+            echo ""
+            echo "File: $iso ($size bytes)"
+            echo "SHA256: $sha"
+            echo ""
+            echo "BIOS/legacy boot (isolinux) only for now; no UEFI boot yet."
+            echo "Most VMs and legacy-mode hardware are fine."
+            echo ""
+            echo "GitHub caps release assets at 2GB. If this ISO is published as"
+            echo "split parts, reassemble it with:"
+            echo ""
+            echo '    cat Liquid-OS-*.iso.part-* > Liquid-OS.iso'
+            echo '    sha256sum -c Liquid-OS-*.iso.sha256'
+          } > release-notes.md
+
           gh release create "${{ github.ref_name }}" \
             --title "Liquid OS ${{ github.ref_name }}" \
-            --notes "Liquid OS — Ubuntu 24.04 LTS with the Liquid Glass GNOME desktop.
-
-Boots to a live GNOME session and can be installed to disk with the
-\"Install Liquid OS\" icon (ubiquity).
-
-\`$iso\` — $size bytes
-SHA256: \`$sha\`
-
-BIOS/legacy boot (isolinux) only for now; no UEFI boot yet. Most VMs and
-legacy-mode hardware are fine.
-
-If the ISO is published as split parts (GitHub caps release assets at
-2GB), reassemble it with:
-
-    cat ${iso}.part-* > ${iso}
-    sha256sum -c ${iso}.sha256
-" \
+            --notes-file release-notes.md \
             --latest
 
           if [ "$size" -lt "$limit" ]; then
