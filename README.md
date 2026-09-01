@@ -7,12 +7,6 @@ colorful, procedurally generated wallpaper that carries through into the boot
 screen and GRUB menu. It's a real, installable OS — full `ubuntu-desktop`
 plus Ubuntu's actual graphical installer — not a stripped-down demo.
 
-## Screenshots
-
-<!-- LIQUID_OS_SCREENSHOTS_START -->
-_No screenshots captured this run -- see the screenshot job logs._
-<!-- LIQUID_OS_SCREENSHOTS_END -->
-
 ## The look
 
 Liquid OS starts from stock Ubuntu and reworks the desktop into a frosted,
@@ -56,27 +50,21 @@ local build environment needed on your end.
 
 ## Try it
 
-- **Live session:** boot the ISO as-is (USB stick via `dd`, Balena Etcher, or
-  Rufus, or in a VM — UTM, VirtualBox, VMware, or
-  `qemu-system-x86_64 -m 4096 -cdrom Liquid-OS-*.iso -enable-kvm`, dropping
-  `-enable-kvm` off Linux) to try the desktop without touching your disk.
+- **Live session:** boot the ISO as-is — in a VM (UTM, VirtualBox, VMware) or
+  from a USB stick (Balena Etcher, Rufus, `dd`) — to try the desktop without
+  touching your disk. In UTM on Apple Silicon: create a new VM using
+  "Emulate" (not "Virtualize" — that only supports arm64 guests, and this
+  ISO is x86_64), pick Linux, attach the ISO as the boot drive, and give it
+  a few GB of RAM.
 - **Install it for real:** the live desktop has an "Install Liquid OS" icon
   that launches `ubiquity`, Ubuntu's normal graphical installer.
 
 ## Repo layout
 
 ```
-.github/workflows/build-iso.yml   CI pipeline:
-                                     build      -> installs live-build,
-                                                   generates the wallpaper,
-                                                   merges the overlay below
-                                                   into a live-build config,
-                                                   runs `lb build`.
-                                     screenshot -> boots the resulting ISO in
-                                                   QEMU/KVM, captures frames,
-                                                   and commits them into
-                                                   docs/screenshots/ + this
-                                                   README.
+.github/workflows/build-iso.yml   CI pipeline: installs live-build, generates
+                                   the wallpaper, merges the overlay below
+                                   into a live-build config, runs `lb build`.
 scripts/generate-wallpaper.py     Procedural liquid-glass wallpaper generator.
 livebuild-overlay/
   package-lists/                  Packages installed via apt during the
@@ -90,20 +78,13 @@ livebuild-overlay/
                                    installation: theme build, extension
                                    install, Plymouth/initramfs update, dconf
                                    compile.
-docs/screenshots/                 Auto-captured desktop screenshots (written
-                                   by CI, not hand-curated).
 ```
 
 ## Notes / known limitations
 
 - The ISO currently boots BIOS/legacy (isolinux) only — no UEFI boot yet.
-  Most VMs (including the QEMU setup above and the screenshot job's own
-  boot-test) and older/legacy-mode hardware are fine; a strict UEFI-only
+  Most VMs and older/legacy-mode hardware are fine; a strict UEFI-only
   machine won't boot it directly yet.
-- The screenshot job is best-effort: it boots the live session headless and
-  takes several timed screenshots. If GNOME hasn't finished loading by the
-  last capture, you'll see a boot/login frame instead of the idle desktop —
-  re-run the workflow or bump the wait time in the `screenshot` job if so.
 - GitHub Release assets are capped at 2 GB per file; a full `ubuntu-desktop`
   ISO can exceed that. The workflow always uploads a plain Actions artifact
   regardless, as a fallback, and will report (not fail) if the release
