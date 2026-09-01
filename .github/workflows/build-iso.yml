@@ -88,6 +88,7 @@ jobs:
           echo "Detected installed kernel version: $KVER"
           mkdir -p config/bootloaders/isolinux
           ln -sf /usr/lib/syslinux/isolinux.bin config/bootloaders/isolinux/isolinux.bin
+          ln -sf /usr/lib/syslinux/modules/bios/ldlinux.c32 config/bootloaders/isolinux/ldlinux.c32
           cat > config/bootloaders/isolinux/isolinux.cfg <<EOF
           DEFAULT live
           TIMEOUT 50
