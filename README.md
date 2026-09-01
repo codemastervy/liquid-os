@@ -18,9 +18,46 @@ to [`docs/screenshots/`](docs/screenshots) by the workflow itself. They'll
 show up here once the first successful run completes:
 
 <!-- LIQUID_OS_SCREENSHOTS_START -->
-_No screenshots yet — run the workflow (see below) to generate them. The
-`screenshot` job commits frames from the boot sequence and finished desktop
-straight into this section of this file._
+![frame-01.png](docs/screenshots/frame-01.png)
+
+![frame-02.png](docs/screenshots/frame-02.png)
+
+![frame-03.png](docs/screenshots/frame-03.png)
+
+![frame-04.png](docs/screenshots/frame-04.png)
+
+![frame-05.png](docs/screenshots/frame-05.png)
+
+![frame-06.png](docs/screenshots/frame-06.png)
+
+![frame-07.png](docs/screenshots/frame-07.png)
+
+![frame-08.png](docs/screenshots/frame-08.png)
+
+![frame-09.png](docs/screenshots/frame-09.png)
+
+![frame-10.png](docs/screenshots/frame-10.png)
+
+![frame-11.png](docs/screenshots/frame-11.png)
+
+![frame-12.png](docs/screenshots/frame-12.png)
+
+![frame-13.png](docs/screenshots/frame-13.png)
+
+![frame-14.png](docs/screenshots/frame-14.png)
+
+![frame-15.png](docs/screenshots/frame-15.png)
+
+![frame-16.png](docs/screenshots/frame-16.png)
+
+![frame-17.png](docs/screenshots/frame-17.png)
+
+![frame-18.png](docs/screenshots/frame-18.png)
+
+![frame-19.png](docs/screenshots/frame-19.png)
+
+![frame-20.png](docs/screenshots/frame-20.png)
+
 <!-- LIQUID_OS_SCREENSHOTS_END -->
 
 ## Build it
