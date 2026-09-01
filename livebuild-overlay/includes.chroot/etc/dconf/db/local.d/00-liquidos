@@ -13,7 +13,10 @@ picture-options='zoom'
 picture-uri='file:///usr/share/backgrounds/liquidos/wallpaper.png'
 
 [org/gnome/shell]
-enabled-extensions=['blur-my-shell@aunetx']
+# This key REPLACES the list rather than adding to it, so Ubuntu's own
+# extensions have to be repeated here -- listing only blur-my-shell silently
+# removed the dock, the app indicators and the desktop icons.
+enabled-extensions=['blur-my-shell@aunetx', 'ubuntu-dock@ubuntu.com', 'ubuntu-appindicators@ubuntu.com', 'ding@rastersoft.com', 'tiling-assistant@ubuntu.com']
 favorite-apps=['org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop', 'firefox_firefox.desktop', 'ubiquity.desktop']
 
 [org/gnome/shell/extensions/blur-my-shell/panel]

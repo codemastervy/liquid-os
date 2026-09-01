@@ -3,27 +3,62 @@ set -e
 
 UUID="blur-my-shell@aunetx"
 DEST="/usr/share/gnome-shell/extensions/${UUID}"
+# Pinned: cloning master made the image non-reproducible, and the layout the
+# hook has to unpack differs between releases. v68 declares shell-version
+# 46/47/48, and 24.04 ships GNOME Shell 46.
+TAG="v68"
 
-if [ -d "$DEST" ]; then
-  echo "[liquidos] blur-my-shell already installed via apt package, nothing to do"
-  exit 0
-fi
+install_from_source() {
+  TMP=$(mktemp -d)
+  trap 'rm -rf "$TMP"' EXIT
 
-echo "[liquidos] blur-my-shell not found from apt, trying to install from source"
-if apt-get install -y gnome-shell-extension-blur-my-shell; then
-  echo "[liquidos] installed via apt on retry"
-  exit 0
-fi
+  git clone --depth 1 --branch "$TAG" \
+    https://github.com/aunetx/blur-my-shell.git "$TMP/bms" || return 1
 
-TMP=$(mktemp -d)
-if git clone --depth 1 https://github.com/aunetx/blur-my-shell.git "$TMP/blur-my-shell"; then
+  src="$TMP/bms"
+  # The repo is NOT laid out like an installed extension: extension.js and
+  # friends live in src/, while metadata.json, schemas/ and resources/ sit at
+  # the repo root (see its Makefile, which packs them together). Copying the
+  # root wholesale -- which this hook used to do -- produces a directory with
+  # a valid metadata.json but no extension.js, so GNOME Shell enables an
+  # extension that has no code to load. Mirror what `make build` assembles.
   mkdir -p "$DEST"
-  cp -r "$TMP"/blur-my-shell/* "$DEST"/ 2>/dev/null || true
-  if ls "$DEST"/schemas/*.gschema.xml >/dev/null 2>&1; then
-    glib-compile-schemas "$DEST/schemas" || true
-  fi
-  echo "[liquidos] installed blur-my-shell from source"
+  cp -a "$src"/src/. "$DEST"/
+  cp -a "$src"/metadata.json "$DEST"/
+  [ -d "$src/resources" ] && cp -a "$src"/resources "$DEST"/
+  [ -f "$src/LICENSE" ] && cp -a "$src"/LICENSE "$DEST"/
+
+  mkdir -p "$DEST/schemas"
+  cp -a "$src"/schemas/*.gschema.xml "$DEST/schemas"/
+  glib-compile-schemas "$DEST/schemas"
+}
+
+if [ -d "$DEST" ] && [ -f "$DEST/extension.js" ]; then
+  echo "[liquidos] blur-my-shell already present from apt, nothing to do"
+elif apt-get install -y gnome-shell-extension-blur-my-shell 2>/dev/null \
+     && [ -f "$DEST/extension.js" ]; then
+  echo "[liquidos] installed blur-my-shell via apt"
 else
-  echo "[liquidos] WARNING: could not install blur-my-shell, continuing without live blur"
+  echo "[liquidos] installing blur-my-shell from source at $TAG"
+  install_from_source
 fi
-rm -rf "$TMP"
+
+# Hard-verify, rather than shipping a silently broken extension: a missing
+# metadata.json or extension.js means GNOME Shell tries to enable something
+# unloadable, and a missing compiled schema makes GJS abort() when the
+# extension calls g_settings_new -- which takes the whole shell down and lands
+# the live session on "Oh no! Something has gone wrong."
+for required in "$DEST/metadata.json" "$DEST/extension.js" "$DEST/schemas/gschemas.compiled"; do
+  if [ ! -f "$required" ]; then
+    echo "[liquidos] ERROR: $required is missing -- blur-my-shell install is broken" >&2
+    exit 1
+  fi
+done
+
+if ! grep -q '"46"' "$DEST/metadata.json"; then
+  echo "[liquidos] ERROR: $DEST/metadata.json does not declare shell-version 46" >&2
+  cat "$DEST/metadata.json" >&2
+  exit 1
+fi
+
+echo "[liquidos] blur-my-shell verified: metadata, extension.js and compiled schemas all present"

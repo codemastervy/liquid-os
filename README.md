@@ -109,6 +109,17 @@ livebuild-overlay/
   Most VMs and older/legacy-mode hardware are fine; a strict UEFI-only
   machine won't boot it directly yet.
 - GitHub Release assets are capped at 2 GB per file; a full `ubuntu-desktop`
-  ISO can exceed that. The workflow always uploads a plain Actions artifact
-  regardless, as a fallback, and will report (not fail) if the release
-  upload is skipped for being oversized.
+  ISO can exceed that, so the workflow splits it into `.part-*` files and
+  publishes a `.sha256` next to them (see **Get it** above for reassembly).
+  A plain Actions artifact is always uploaded too, as a fallback.
+- **The live session's user and hostname are still `ubuntu`, not `liquid` /
+  `liquidos`.** Casper derives both from `FLAVOUR` in `/etc/casper.conf` and
+  from the first word of `/.disk/info`; setting either to a Liquid OS value
+  produced a live session where GNOME Shell failed to start ("Oh no! Something
+  has gone wrong") — reproduced both in a locally patched image and in a clean
+  CI build, so it isn't a packaging artifact. Rather than ship an image that
+  doesn't reach a desktop, that branding is reverted for now and the shell
+  prompt reads `ubuntu@ubuntu`. Everything else is branded: `/etc/os-release`,
+  the TTY login banner and MOTD, the ISO volume label, the boot splash, the
+  wallpaper, the theme, and the installer. Once the account name is changed
+  during installation this is invisible on an installed system.
