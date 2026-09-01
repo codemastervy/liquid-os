@@ -51,7 +51,7 @@ jobs:
             --distribution noble \
             --architectures amd64 \
             --archive-areas "main restricted universe multiverse" \
-            --binary-images iso-hybrid \
+            --binary-images iso \
             --bootloader grub2 \
             --debian-installer false \
             --iso-application "Liquid OS" \
