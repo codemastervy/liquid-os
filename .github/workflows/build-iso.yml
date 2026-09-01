@@ -70,8 +70,35 @@ jobs:
 
       - name: Build ISO
         run: |
+          set -euo pipefail
           cd build
-          sudo lb build 2>&1 | tee build.log
+
+          # lb build == lb bootstrap && lb chroot && lb binary && lb source
+          # (confirmed from live-build's own scripts/build/lb_build). Split
+          # so we can inject a correct isolinux boot config between chroot
+          # and binary, once the actual installed kernel filename is known
+          # (it can't be predicted ahead of time, and live-build's own
+          # bundled isolinux template assumes Debian's live-boot layout,
+          # not casper's -- see commit history for the long version).
+          # lb source is skipped: unneeded for the binary ISO we care about.
+          sudo lb bootstrap 2>&1 | tee build.log
+          sudo lb chroot 2>&1 | tee -a build.log
+
+          KVER=$(basename "$(ls chroot/boot/vmlinuz-* | head -n1)" | sed 's/^vmlinuz-//')
+          echo "Detected installed kernel version: $KVER"
+          mkdir -p config/bootloaders/isolinux
+          ln -sf /usr/lib/syslinux/isolinux.bin config/bootloaders/isolinux/isolinux.bin
+          cat > config/bootloaders/isolinux/isolinux.cfg <<EOF
+          DEFAULT live
+          TIMEOUT 50
+          PROMPT 0
+          LABEL live
+            KERNEL /casper/vmlinuz-$KVER
+            APPEND initrd=/casper/initrd.img-$KVER boot=casper quiet splash ---
+          EOF
+
+          sudo lb binary 2>&1 | tee -a build.log
+
           if ! ls *.iso >/dev/null 2>&1; then
             echo "::error::lb build produced no .iso file. Check the build-log artifact for the real failure (lb build itself often exits 0 even when an internal stage failed)."
             exit 1
