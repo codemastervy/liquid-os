@@ -16,6 +16,7 @@ syslinux-utils
 syslinux-common
 isolinux
 librsvg2-bin
+cpio
 firefox
 git
 curl

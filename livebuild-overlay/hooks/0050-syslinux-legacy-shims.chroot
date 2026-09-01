@@ -8,9 +8,14 @@ set -e
 #      tar xfz /usr/share/gfxboot-theme-ubuntu/bootlogo.tar.gz -C <target>
 #    for LB_MODE=ubuntu, regardless of --syslinux-theme. The
 #    gfxboot-theme-ubuntu package itself no longer exists in Ubuntu's
-#    archive at all, so nothing installs that file. Provide an empty (but
-#    valid) tar.gz so the extraction is a harmless no-op instead of a hard
-#    failure.
+#    archive at all, so nothing installs that file. Ubuntu's own patch to
+#    this script (not present in upstream Debian live-build -- confirmed by
+#    diffing the actual installed .deb) ALSO unconditionally does
+#      (cd "$tmpdir" && cpio -i) < ${_TARGET}/bootlogo
+#    later on regardless of theme/mode, expecting a real cpio archive named
+#    "bootlogo" to have come out of that tarball. An empty tar.gz alone
+#    isn't enough -- ship a tarball containing a valid (if empty) cpio
+#    archive named "bootlogo" so both steps are harmless no-ops.
 #
 # 2. With --syslinux-theme live-build, it renders a splash via
 #      rsvg --format png --height 480 --width 640 splash.svg splash.png
@@ -35,7 +40,10 @@ ln -sf /usr/lib/syslinux/modules/bios/vesamenu.c32 /usr/lib/syslinux/vesamenu.c3
 
 echo "[liquidos] Installing legacy gfxboot-theme-ubuntu placeholder"
 mkdir -p /usr/share/gfxboot-theme-ubuntu
-tar czf /usr/share/gfxboot-theme-ubuntu/bootlogo.tar.gz --files-from=/dev/null
+BOOTLOGO_TMP=$(mktemp -d)
+: | cpio -o --quiet --format=newc > "$BOOTLOGO_TMP/bootlogo"
+tar czf /usr/share/gfxboot-theme-ubuntu/bootlogo.tar.gz -C "$BOOTLOGO_TMP" bootlogo
+rm -rf "$BOOTLOGO_TMP"
 
 echo "[liquidos] Installing rsvg -> rsvg-convert compatibility wrapper"
 cat > /usr/bin/rsvg <<'EOF'
