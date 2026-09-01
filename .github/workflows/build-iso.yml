@@ -52,7 +52,7 @@ jobs:
             --architectures amd64 \
             --archive-areas "main restricted universe multiverse" \
             --binary-images iso-hybrid \
-            --debian-installer none \
+            --debian-installer false \
             --iso-application "Liquid OS" \
             --iso-publisher "https://github.com/codemastervy/liquid-os" \
             --iso-volume "LIQUIDOS" \
@@ -70,6 +70,10 @@ jobs:
         run: |
           cd build
           sudo lb build 2>&1 | tee build.log
+          if ! ls *.iso >/dev/null 2>&1; then
+            echo "::error::lb build produced no .iso file. Check the build-log artifact for the real failure (lb build itself often exits 0 even when an internal stage failed)."
+            exit 1
+          fi
 
       - name: Rename artifact
         run: |
