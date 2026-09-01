@@ -137,15 +137,40 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           cd build
           iso=$(ls Liquid-OS-*.iso | head -n1)
           size=$(stat -c%s "$iso")
           limit=$((2 * 1024 * 1024 * 1024))
-          if [ "$size" -ge "$limit" ]; then
-            echo "::warning::$iso is $size bytes, over the 2GB GitHub release asset limit -- skipping release upload, use the workflow artifact instead."
-            exit 0
-          fi
-          gh release create "${{ github.ref_name }}" "$iso" \
+          sha=$(sha256sum "$iso" | cut -d' ' -f1)
+
+          gh release create "${{ github.ref_name }}" \
             --title "Liquid OS ${{ github.ref_name }}" \
-            --notes "Automated build of Liquid OS (Ubuntu 24.04 base) with the Liquid Glass GNOME theme." \
+            --notes "Liquid OS — Ubuntu 24.04 LTS with the Liquid Glass GNOME desktop.
+
+Boots to a live GNOME session and can be installed to disk with the
+\"Install Liquid OS\" icon (ubiquity).
+
+\`$iso\` — $size bytes
+SHA256: \`$sha\`
+
+BIOS/legacy boot (isolinux) only for now; no UEFI boot yet. Most VMs and
+legacy-mode hardware are fine.
+
+If the ISO is published as split parts (GitHub caps release assets at
+2GB), reassemble it with:
+
+    cat ${iso}.part-* > ${iso}
+    sha256sum -c ${iso}.sha256
+" \
             --latest
+
+          if [ "$size" -lt "$limit" ]; then
+            gh release upload "${{ github.ref_name }}" "$iso" --clobber
+          else
+            echo "$iso is ${size} bytes, over GitHub's 2GB per-asset release limit -- splitting."
+            split -b 1900M -d "$iso" "${iso}.part-"
+            echo "$sha  $iso" > "${iso}.sha256"
+            ls -lh "${iso}".part-* "${iso}.sha256"
+            gh release upload "${{ github.ref_name }}" "${iso}".part-* "${iso}.sha256" --clobber
+          fi
