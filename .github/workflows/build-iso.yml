@@ -173,10 +173,12 @@ jobs:
           set -x
           iso=$(ls iso/*.iso | head -n1)
           mkdir -p shots
+          free -h
+          sudo dmesg -C || true
 
           qemu-system-x86_64 \
             -machine pc,accel=kvm:tcg \
-            -cpu host -smp 2 -m 4096 \
+            -cpu host -smp 2 -m 2048 \
             -cdrom "$iso" -boot d \
             -vga std -display none \
             -serial file:serial.log \
@@ -196,6 +198,8 @@ jobs:
           if ! kill -0 "$QEMU_PID" 2>/dev/null; then
             echo "::error::qemu exited within 5 seconds of starting. Log follows:"
             cat qemu.log qemu-debug.log serial.log 2>/dev/null
+            echo "=== dmesg since qemu started ==="
+            sudo dmesg -T || true
             exit 1
           fi
 
@@ -207,6 +211,9 @@ jobs:
             if ! kill -0 "$QEMU_PID" 2>/dev/null; then
               echo "::warning::qemu process died mid-capture (frame $i). Log follows:"
               cat qemu.log qemu-debug.log serial.log 2>/dev/null
+              echo "=== dmesg since qemu started ==="
+              sudo dmesg -T || true
+              free -h
               break
             fi
             send_monitor "screendump shots/frame-$(printf '%02d' "$i").ppm"
