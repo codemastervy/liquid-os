@@ -88,7 +88,7 @@ livebuild-overlay/
                                    filesystem (branding, dconf defaults, grub
                                    background config, install-desktop
                                    shortcut, wallpaper output).
-  hooks/live/                     Scripts run inside the chroot after package
+  hooks/                          Scripts run inside the chroot after package
                                    installation: theme build, extension
                                    install, Plymouth/initramfs update, dconf
                                    compile.
