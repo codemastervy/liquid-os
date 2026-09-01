@@ -1,0 +1,29 @@
+#!/bin/sh
+set -e
+
+UUID="blur-my-shell@aunetx"
+DEST="/usr/share/gnome-shell/extensions/${UUID}"
+
+if [ -d "$DEST" ]; then
+  echo "[liquidos] blur-my-shell already installed via apt package, nothing to do"
+  exit 0
+fi
+
+echo "[liquidos] blur-my-shell not found from apt, trying to install from source"
+if apt-get install -y gnome-shell-extension-blur-my-shell; then
+  echo "[liquidos] installed via apt on retry"
+  exit 0
+fi
+
+TMP=$(mktemp -d)
+if git clone --depth 1 https://github.com/aunetx/blur-my-shell.git "$TMP/blur-my-shell"; then
+  mkdir -p "$DEST"
+  cp -r "$TMP"/blur-my-shell/* "$DEST"/ 2>/dev/null || true
+  if ls "$DEST"/schemas/*.gschema.xml >/dev/null 2>&1; then
+    glib-compile-schemas "$DEST/schemas" || true
+  fi
+  echo "[liquidos] installed blur-my-shell from source"
+else
+  echo "[liquidos] WARNING: could not install blur-my-shell, continuing without live blur"
+fi
+rm -rf "$TMP"

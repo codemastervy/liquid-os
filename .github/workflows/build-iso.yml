@@ -1,0 +1,193 @@
+name: Build Liquid OS ISO
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths:
+      - "livebuild-overlay/**"
+      - "scripts/**"
+      - ".github/workflows/build-iso.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android \
+            /usr/local/.ghcup /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          sudo apt-get clean
+          df -h
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y live-build debootstrap ubuntu-keyring \
+            squashfs-tools xorriso isolinux syslinux-efi grub-pc-bin \
+            grub-efi-amd64-bin mtools dosfstools python3-pip
+          pip3 install --break-system-packages pillow
+
+      - name: Generate liquid-glass wallpaper
+        run: |
+          mkdir -p livebuild-overlay/includes.chroot/usr/share/backgrounds/liquidos
+          python3 scripts/generate-wallpaper.py \
+            livebuild-overlay/includes.chroot/usr/share/backgrounds/liquidos/wallpaper.png
+
+      - name: Configure live-build
+        run: |
+          mkdir -p build
+          cd build
+          lb config \
+            --mode ubuntu \
+            --distribution noble \
+            --architectures amd64 \
+            --archive-areas "main restricted universe multiverse" \
+            --binary-images iso-hybrid \
+            --debian-installer none \
+            --iso-application "Liquid OS" \
+            --iso-publisher "https://github.com/codemastervy/liquid-os" \
+            --iso-volume "LIQUIDOS" \
+            --memtest none \
+            --hostname liquidos \
+            --username liquid
+
+      - name: Merge Liquid OS overlay into live-build config
+        run: |
+          mkdir -p build/config/package-lists build/config/includes.chroot build/config/hooks/live
+          cp -av livebuild-overlay/package-lists/. build/config/package-lists/
+          cp -av livebuild-overlay/includes.chroot/. build/config/includes.chroot/
+          cp -av livebuild-overlay/hooks/. build/config/hooks/live/
+          chmod +x build/config/hooks/live/*.hook.chroot
+
+      - name: Build ISO
+        run: |
+          cd build
+          sudo lb build 2>&1 | tee build.log
+
+      - name: Rename artifact
+        run: |
+          cd build
+          iso=$(ls *.iso | head -n1)
+          mv "$iso" "Liquid-OS-$(date +%Y%m%d)-amd64.iso"
+          ls -lh *.iso
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: liquid-os-iso
+          path: build/Liquid-OS-*.iso
+          retention-days: 30
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build/build.log
+
+      - name: Create GitHub Release (tag pushes only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd build
+          iso=$(ls Liquid-OS-*.iso | head -n1)
+          size=$(stat -c%s "$iso")
+          limit=$((2 * 1024 * 1024 * 1024))
+          if [ "$size" -ge "$limit" ]; then
+            echo "::warning::$iso is $size bytes, over the 2GB GitHub release asset limit -- skipping release upload, use the workflow artifact instead."
+            exit 0
+          fi
+          gh release create "${{ github.ref_name }}" "$iso" \
+            --title "Liquid OS ${{ github.ref_name }}" \
+            --notes "Automated build of Liquid OS (Ubuntu 24.04 base) with the Liquid Glass GNOME theme." \
+            --latest
+
+  screenshot:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Download ISO artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: liquid-os-iso
+          path: iso
+
+      - name: Install QEMU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 imagemagick
+          sudo chmod 666 /dev/kvm || true
+          ls -l /dev/kvm || echo "no /dev/kvm, will fall back to software emulation (slow)"
+
+      - name: Boot ISO and capture frames
+        run: |
+          set -x
+          iso=$(ls iso/*.iso | head -n1)
+          mkdir -p shots
+
+          qemu-system-x86_64 \
+            -machine pc,accel=kvm:tcg \
+            -cpu max -smp 2 -m 4096 \
+            -cdrom "$iso" -boot d \
+            -vga std -display none \
+            -monitor telnet:127.0.0.1:4444,server,nowait \
+            -no-reboot &
+          QEMU_PID=$!
+
+          send_monitor() {
+            exec 3<>/dev/tcp/127.0.0.1/4444 || return 0
+            printf '%s\n' "$1" >&3
+            sleep 1
+            exec 3<&- 3>&-
+          }
+
+          sleep 20
+          send_monitor "sendkey ret"
+
+          for i in $(seq 1 20); do
+            sleep 30
+            send_monitor "screendump shots/frame-$(printf '%02d' "$i").ppm"
+          done
+
+          kill "$QEMU_PID" || true
+          wait "$QEMU_PID" 2>/dev/null || true
+
+          for f in shots/*.ppm; do
+            if [ -s "$f" ]; then
+              convert "$f" "${f%.ppm}.png" && rm -f "$f"
+            fi
+          done
+          ls -la shots
+
+      - name: Publish screenshots
+        run: |
+          mkdir -p docs/screenshots
+          rm -f docs/screenshots/frame-*.png
+          cp shots/*.png docs/screenshots/ 2>/dev/null || true
+          python3 scripts/update_readme_screenshots.py
+
+      - name: Commit screenshots
+        run: |
+          git config user.name "liquid-os-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/screenshots README.md
+          git diff --cached --quiet || git commit -m "Update auto-captured desktop screenshots [skip ci]"
+          git push

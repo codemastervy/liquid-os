@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+IMG=/usr/share/backgrounds/liquidos/wallpaper.png
+if [ ! -f "$IMG" ]; then
+  echo "[liquidos] no wallpaper found, skipping plymouth branding"
+  exit 0
+fi
+
+THEME_LINK=$(readlink -f /etc/alternatives/default.plymouth 2>/dev/null || true)
+if [ -n "$THEME_LINK" ] && [ -d "$(dirname "$THEME_LINK")" ]; then
+  THEME_DIR=$(dirname "$THEME_LINK")
+  echo "[liquidos] Applying wallpaper to plymouth theme at $THEME_DIR"
+  for candidate in background.png watermark.png ubuntu-logo.png bgrt-fallback.png; do
+    if [ -f "$THEME_DIR/$candidate" ]; then
+      cp "$IMG" "$THEME_DIR/$candidate"
+    fi
+  done
+else
+  echo "[liquidos] no default plymouth theme detected, skipping"
+fi
+
+update-initramfs -u || true

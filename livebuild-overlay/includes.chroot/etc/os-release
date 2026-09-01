@@ -1,0 +1,12 @@
+NAME="Liquid OS"
+VERSION="24.04 (Liquid Noble)"
+ID=liquidos
+ID_LIKE="ubuntu debian"
+PRETTY_NAME="Liquid OS 24.04"
+VERSION_ID="24.04"
+HOME_URL="https://github.com/codemastervy/liquid-os"
+SUPPORT_URL="https://github.com/codemastervy/liquid-os/issues"
+BUG_REPORT_URL="https://github.com/codemastervy/liquid-os/issues"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=noble
+UBUNTU_CODENAME=noble
