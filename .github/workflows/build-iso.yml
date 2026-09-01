@@ -62,11 +62,17 @@ jobs:
 
       - name: Merge Liquid OS overlay into live-build config
         run: |
-          mkdir -p build/config/package-lists build/config/includes.chroot build/config/hooks
+          mkdir -p build/config/package-lists build/config/includes.chroot \
+                   build/config/includes.binary build/config/hooks
           cp -av livebuild-overlay/package-lists/. build/config/package-lists/
           cp -av livebuild-overlay/includes.chroot/. build/config/includes.chroot/
+          # includes.binary lands in the ISO root itself (alongside casper/ and
+          # isolinux/), which is where /.disk/info has to go to brand the media.
+          cp -av livebuild-overlay/includes.binary/. build/config/includes.binary/
           cp -av livebuild-overlay/hooks/. build/config/hooks/
           chmod +x build/config/hooks/*.chroot
+          echo "=== .disk/info that will ship in the ISO ==="
+          cat build/config/includes.binary/.disk/info
 
       - name: Build ISO
         run: |
