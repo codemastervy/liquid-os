@@ -12,6 +12,7 @@ network-manager-gnome
 plymouth-themes
 os-prober
 discover
+syslinux-utils
 firefox
 git
 curl
