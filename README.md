@@ -10,9 +10,7 @@ plus Ubuntu's actual graphical installer — not a stripped-down demo.
 ## Screenshots
 
 <!-- LIQUID_OS_SCREENSHOTS_START -->
-_No screenshots yet — run the workflow (see below) to generate them. (The
-previous set was captured against a build that didn't boot correctly; the
-next successful run will replace this placeholder with real ones.)_
+_No screenshots captured this run -- see the screenshot job logs._
 <!-- LIQUID_OS_SCREENSHOTS_END -->
 
 ## The look
