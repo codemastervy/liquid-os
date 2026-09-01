@@ -52,6 +52,7 @@ jobs:
             --architectures amd64 \
             --archive-areas "main restricted universe multiverse" \
             --binary-images iso-hybrid \
+            --bootloader grub \
             --debian-installer false \
             --iso-application "Liquid OS" \
             --iso-publisher "https://github.com/codemastervy/liquid-os" \
