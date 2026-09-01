@@ -1,0 +1,19 @@
+#!/bin/sh
+# GNOME refuses to launch a .desktop file dropped on the Desktop unless it is
+# executable AND carries the metadata::trusted flag -- otherwise it renders
+# with a "don't launch this" badge, which is exactly what the first booted
+# Liquid OS image showed for the Install icon. Neither can be baked into the
+# image from the build chroot (the flag is per-user gio metadata), so set it
+# once at first login of the live/installed session.
+set -e
+
+DESKTOP_FILE="${HOME}/Desktop/install-liquidos.desktop"
+[ -f "${DESKTOP_FILE}" ] || exit 0
+
+chmod +x "${DESKTOP_FILE}" 2>/dev/null || true
+if command -v gio >/dev/null 2>&1; then
+    gio set "${DESKTOP_FILE}" "metadata::trusted" true 2>/dev/null || true
+fi
+
+# Nautilus only re-reads the trust flag on refresh; touching the file is enough.
+touch "${DESKTOP_FILE}" 2>/dev/null || true

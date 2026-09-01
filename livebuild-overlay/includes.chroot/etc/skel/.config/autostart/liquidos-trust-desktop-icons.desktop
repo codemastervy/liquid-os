@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Liquid OS desktop icon trust
+Comment=Mark the Install Liquid OS desktop launcher as trusted so GNOME will run it
+Exec=/usr/local/bin/liquidos-trust-desktop-icons
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
