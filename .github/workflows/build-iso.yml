@@ -165,10 +165,23 @@ jobs:
             echo '    sha256sum -c Liquid-OS-*.iso.sha256'
           } > release-notes.md
 
-          gh release create "${{ github.ref_name }}" \
-            --title "Liquid OS ${{ github.ref_name }}" \
-            --notes-file release-notes.md \
-            --latest
+          # Idempotent: a tag can legitimately be re-pushed (a history rewrite
+          # moves every tag), which re-runs this job against a tag whose
+          # release already exists. `gh release create` fails outright in that
+          # case and, under `set -e`, failed the whole build -- so edit the
+          # existing release instead of dying on it.
+          if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
+            echo "Release ${{ github.ref_name }} already exists -- updating it."
+            gh release edit "${{ github.ref_name }}" \
+              --title "Liquid OS ${{ github.ref_name }}" \
+              --notes-file release-notes.md \
+              --latest
+          else
+            gh release create "${{ github.ref_name }}" \
+              --title "Liquid OS ${{ github.ref_name }}" \
+              --notes-file release-notes.md \
+              --latest
+          fi
 
           if [ "$size" -lt "$limit" ]; then
             gh release upload "${{ github.ref_name }}" "$iso" --clobber
