@@ -59,7 +59,7 @@ Liquid OS is built by a GitHub Actions workflow in this repo (see
 local build environment needed on your end.
 
 - **Download the latest release:**
-  [v1.0.0](https://github.com/codemastervy/liquid-os/releases/tag/v1.0.0).
+  [v1.0.1](https://github.com/codemastervy/liquid-os/releases/tag/v1.0.1).
   The ISO is ~2.4 GB and GitHub caps release assets at 2 GB, so it is
   published as split parts. Reassemble and verify with:
 
