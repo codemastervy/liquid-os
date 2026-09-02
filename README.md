@@ -1,5 +1,7 @@
 # Liquid OS
 
+![Liquid OS desktop](docs/screenshots/desktop.png)
+
 Liquid OS is a full desktop Linux distro built on Ubuntu 24.04 LTS, wrapped in
 a glassmorphism "liquid glass" GNOME desktop: translucent windows and panels,
 real-time background blur behind the top bar and overview, and a soft,
@@ -7,22 +9,21 @@ colorful, procedurally generated wallpaper that carries through into the boot
 screen and GRUB menu. It's a real, installable OS — full `ubuntu-desktop`
 plus Ubuntu's actual graphical installer — not a stripped-down demo.
 
+Built end to end by a GitHub Actions workflow, and every screenshot below is a
+framebuffer grab from the released ISO actually booted in QEMU — not a mockup.
+The published release was reassembled from its split parts and checked against
+its own SHA256 before those grabs were taken.
+
 ## Screenshots
-
-Captured from the built ISO actually running in QEMU (framebuffer grabs, so
-this is the real booted system, not mockups):
-
-![Liquid OS desktop](docs/screenshots/desktop.png)
-
-The desktop with the procedurally generated liquid-glass wallpaper.
 
 ![Activities overview](docs/screenshots/activities-overview.png)
 
-The GNOME Activities overview.
+The GNOME Activities overview, with Blur My Shell's rounded blur pipeline.
 
 ![Terminal](docs/screenshots/terminal.png)
 
-A terminal window over the wallpaper.
+A terminal over the wallpaper — `/etc/os-release` and the `liquid@liquidos`
+prompt, from the live session.
 
 ## The look
 
@@ -105,6 +106,60 @@ livebuild-overlay/
                                    install, installer branding,
                                    Plymouth/initramfs update, dconf compile.
 ```
+
+## Problems worth writing down
+
+Most of the work here wasn't theming, it was getting a 2.4 GB image to boot at
+all. Ubuntu's `live-build` is a fork of Debian's `3.0~a57` with its own
+patches, and a lot of its documented behaviour no longer matches what it
+actually does. The findings that cost the most time:
+
+- **A one-character typo dropped the live session into a BusyBox shell.**
+  `casper.conf` was setting `BUILDSYSTEM`, but casper reads `BUILD_SYSTEM`.
+  With it unset, `casper-helpers` leaves `MP_QUIET=""`, and casper then runs
+  `modprobe "${MP_QUIET}" -b overlay` — a quoted *empty* first argument, which
+  fails. Casper panics with "cow format specified as 'overlay' and no support
+  found" and drops to a rescue shell, which reads exactly like a missing
+  kernel module. Found by booting the ISO and reading casper's own
+  `/casper.log`. ([`57ca973`](../../commit/57ca973))
+
+- **An extension was enabled with none of its code installed.** The
+  Blur My Shell hook copied the cloned repo's *root* into the extension
+  directory. But that project keeps `metadata.json`, `schemas/` and
+  `resources/` at the root and all the actual code in `src/` — its Makefile
+  packs the two together. The result passed every casual check (a valid
+  `metadata.json` was right there) while shipping a directory containing
+  `Makefile` and `README.md` and no `extension.js`. The build now assembles it
+  the way `make build` does and hard-fails if the code or compiled schemas are
+  missing, rather than shipping a feature that silently does nothing.
+  ([`37ea787`](../../commit/37ea787))
+
+- **A "broken" image was a starved VM.** A GNOME session that came up as
+  "Oh no! Something has gone wrong." was diagnosed as a branding regression
+  and the branding was reverted — wrongly. GNOME Shell 46 on llvmpipe doesn't
+  fit in 2 GB; gnome-shell was being OOM-killed behind an otherwise clean
+  boot. The same ISO boots straight to the desktop at 4 GB. Casper only reads
+  `FLAVOUR` to decide whether `/.disk/info` may override the username, so it
+  was never capable of breaking a session. The branding went back in and the
+  real constraint got documented instead. ([`0bb4296`](../../commit/0bb4296))
+
+- **Hooks that never ran, silently.** They were at
+  `config/hooks/live/*.hook.chroot`, following current live-build docs. This
+  version wants `config/hooks/*.chroot`. Nothing warns you — the build
+  succeeds and simply skips every customisation.
+  ([`d5d4e7a`](../../commit/d5d4e7a))
+
+- **`lb build` had to be split apart.** Its bundled isolinux template assumes
+  Debian's `live-boot` layout, but this image uses Ubuntu's `casper`, which
+  puts the kernel in `binary/casper/` under a versioned filename that can't be
+  known before the chroot is built. So the build runs `lb bootstrap` and
+  `lb chroot`, reads the installed kernel version off disk, writes its own
+  isolinux config, and only then runs `lb binary`.
+  ([`ca190d1`](../../commit/ca190d1))
+
+A related lesson in verification: `packages.ubuntu.com` returns HTTP 200 for
+"No such package", so an early check for a package that didn't exist passed on
+the status code alone. Checking response *content* replaced it.
 
 ## Notes / known limitations
 
