@@ -1,0 +1,37 @@
+#!/bin/sh
+set -e
+
+DESKTOP="/usr/share/applications/ubiquity.desktop"
+
+# Brand ubiquity's OWN launcher rather than shipping a second .desktop of our
+# own. Casper copies this file to the live user's Desktop and marks it
+# metadata::trusted itself (see casper-bottom/25adduser), so branding it in
+# place gives one correctly-named, already-trusted icon. Shipping a parallel
+# install-liquidos.desktop produced two icons on the desktop -- "Install
+# Ubuntu" from casper and "Install Liquid OS" from us -- plus a duplicate
+# entry in the app grid, and needed a first-login hook to set the trust flag
+# on ours. This replaces all of that.
+if [ ! -f "$DESKTOP" ]; then
+  echo "[liquidos] ERROR: $DESKTOP not found -- is ubiquity installed?" >&2
+  exit 1
+fi
+
+# Casper substitutes the literal string RELEASE from /.disk/info, so drop the
+# placeholder entirely and state the name outright.
+sed -i \
+  -e 's/^Name=.*/Name=Install Liquid OS/' \
+  -e 's/^GenericName=.*/GenericName=Install Liquid OS/' \
+  -e 's/^Comment=.*/Comment=Install Liquid OS to this computer/' \
+  "$DESKTOP"
+
+# Localised Name[xx]= lines would otherwise still say Ubuntu in that locale.
+sed -i '/^Name\[/d; /^GenericName\[/d; /^Comment\[/d' "$DESKTOP"
+
+if grep -q '^Name=Install Liquid OS' "$DESKTOP"; then
+  echo "[liquidos] branded $DESKTOP:"
+  grep -E '^(Name|GenericName|Comment)=' "$DESKTOP"
+else
+  echo "[liquidos] ERROR: failed to brand $DESKTOP" >&2
+  cat "$DESKTOP" >&2
+  exit 1
+fi

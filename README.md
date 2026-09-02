@@ -78,7 +78,8 @@ local build environment needed on your end.
   touching your disk. In UTM on Apple Silicon: create a new VM using
   "Emulate" (not "Virtualize" — that only supports arm64 guests, and this
   ISO is x86_64), pick Linux, attach the ISO as the boot drive, and give it
-  a few GB of RAM.
+  **at least 4 GB of RAM** (see the note under known limitations — 2 GB is
+  not enough for GNOME Shell on a software renderer).
 - **Install it for real:** the live desktop has an "Install Liquid OS" icon
   that launches `ubiquity`, Ubuntu's normal graphical installer.
 
@@ -94,13 +95,15 @@ livebuild-overlay/
                                    build: full ubuntu-desktop, the ubiquity
                                    installer stack, GNOME extensions/tweaks.
   includes.chroot/                Files copied verbatim onto the live
-                                   filesystem (branding, dconf defaults, grub
-                                   background config, install-desktop
-                                   shortcut, wallpaper output).
+                                   filesystem (os-release/issue branding,
+                                   casper.conf, dconf defaults, grub
+                                   background config, wallpaper output).
+  includes.binary/                Files placed in the ISO root itself --
+                                   /.disk/info, which brands the media.
   hooks/                          Scripts run inside the chroot after package
                                    installation: theme build, extension
-                                   install, Plymouth/initramfs update, dconf
-                                   compile.
+                                   install, installer branding,
+                                   Plymouth/initramfs update, dconf compile.
 ```
 
 ## Notes / known limitations
@@ -112,14 +115,9 @@ livebuild-overlay/
   ISO can exceed that, so the workflow splits it into `.part-*` files and
   publishes a `.sha256` next to them (see **Get it** above for reassembly).
   A plain Actions artifact is always uploaded too, as a fallback.
-- **The live session's user and hostname are still `ubuntu`, not `liquid` /
-  `liquidos`.** Casper derives both from `FLAVOUR` in `/etc/casper.conf` and
-  from the first word of `/.disk/info`; setting either to a Liquid OS value
-  produced a live session where GNOME Shell failed to start ("Oh no! Something
-  has gone wrong") — reproduced both in a locally patched image and in a clean
-  CI build, so it isn't a packaging artifact. Rather than ship an image that
-  doesn't reach a desktop, that branding is reverted for now and the shell
-  prompt reads `ubuntu@ubuntu`. Everything else is branded: `/etc/os-release`,
-  the TTY login banner and MOTD, the ISO volume label, the boot splash, the
-  wallpaper, the theme, and the installer. Once the account name is changed
-  during installation this is invisible on an installed system.
+- **Give it at least 4 GB of RAM.** GNOME Shell 46 on a software renderer
+  (llvmpipe — which is what you get in a VM without GPU passthrough) does not
+  fit comfortably in 2 GB: gnome-shell gets OOM-killed during startup and
+  `gnome-session` puts up "Oh no! Something has gone wrong." with an otherwise
+  healthy boot behind it. 4 GB boots to the desktop reliably. If you see that
+  screen, raise the VM's memory before assuming the image is broken.

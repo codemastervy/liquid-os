@@ -67,11 +67,11 @@ jobs:
           cp -av livebuild-overlay/package-lists/. build/config/package-lists/
           cp -av livebuild-overlay/includes.chroot/. build/config/includes.chroot/
           # includes.binary lands in the ISO root itself (alongside casper/ and
-          # isolinux/). Optional -- we currently ship no files there, because a
-          # branded /.disk/info changes the live username casper derives and
-          # that breaks the GNOME session (see "Known limitations" in README).
+          # isolinux/), which is where /.disk/info has to go to brand the media.
           if [ -d livebuild-overlay/includes.binary ]; then
             cp -av livebuild-overlay/includes.binary/. build/config/includes.binary/
+            echo "=== .disk/info that will ship in the ISO ==="
+            cat build/config/includes.binary/.disk/info
           fi
           cp -av livebuild-overlay/hooks/. build/config/hooks/
           chmod +x build/config/hooks/*.chroot

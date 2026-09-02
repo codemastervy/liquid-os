@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Install Liquid OS
-Comment=Install Liquid OS to this computer
-Exec=ubiquity gtk_ui
-Icon=ubiquity
-Terminal=false
-Categories=System;
